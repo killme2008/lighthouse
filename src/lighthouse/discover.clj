@@ -40,12 +40,14 @@
 (defn get-current-nodes [pc service & opts]
   (let [{:keys [path]} (resolve-opts opts)
         node-path (format "%s/%s" path service)]
-    (distinct
-     (map (fn [child]
-            {:id (when-let [p (.getPath child)]
-                   (.substring p (-> node-path count inc)))
-             :data (String. (.getData child))})
-          (seq (.getCurrentData pc))))))
+    (vec
+     (distinct
+      (map (fn [child]
+             {:id (when-let [p (.getPath child)]
+                    (.substring p (-> node-path count inc)))
+              :data (String. (.getData child))})
+           (seq (.getCurrentData pc)))))))
+
 
 (defn start-watch
   "Start to watch a service in zookeeper for service nodes adding/removing.
@@ -73,6 +75,24 @@
                (apply get-current-nodes pc service opts))))))))
     (.start pc)
     pc))
+
+(defn create-service-balancer
+  "Create a service balance function, you can call it
+   with some key,and it wil return a alive node."
+  [cli service & opts]
+  (let [{:keys [balancer-type] :or {balancer-type :round-robin}} (apply hash-map opts)
+        nodes (atom [])
+        pc (apply start-watch cli service (fn [new-nodes]
+                                            (reset! nodes (vec new-nodes))) opts)
+
+        bc (b/create-balancer balancer-type)]
+    (compare-and-set! nodes [] (apply get-current-nodes pc service opts))
+    (with-meta
+      (fn [k]
+        (b/get-node bc @nodes k))
+      {:pc pc
+       :ndoes nodes
+       :bc bc})))
 
 (defn stop-watch
   "Stop the PathChildrenCache."
