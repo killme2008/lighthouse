@@ -91,7 +91,7 @@
       (fn [k]
         (b/get-node bc @nodes k))
       {:pc pc
-       :ndoes nodes
+       :nodes nodes
        :bc bc})))
 
 (defn stop-watch
