@@ -1,4 +1,4 @@
-(ns lighthouse.election
+(ns lighthouse.leader
   (:require [lighthouse.utils :as u])
   (:import [java.util.concurrent CountDownLatch])
   (:refer-clojure :exclude [promise])
@@ -6,7 +6,7 @@
            [org.apache.curator.framework.recipes.leader LeaderSelectorListenerAdapter LeaderSelector CancelLeadershipException LeaderSelectorListener]))
 
 
-(defonce leader-selectors (atom {}))
+(defonce selectors (atom {}))
 
 (defn start-election
   "Start to elect a leader in the special zk path with optional node id.
@@ -33,15 +33,15 @@
                                                (when on-released
                                                  (on-released fk path id))
                                                (if shutdown
-                                                 (when-let [s (get-in @leader-selectors [client path])]
-                                                   (swap! leader-selectors
+                                                 (when-let [s (get-in @selectors [client path])]
+                                                   (swap! selectors
                                                           update-in
                                                           [client]
                                                           #(dissoc % path))
                                                    (.close s))
                                                  (u/reset-promise p)))))
         ^LeaderSelector selector (LeaderSelector. client path listener)]
-    (swap! leader-selectors
+    (swap! selectors
            assoc-in
            [client path]
            (doto selector
@@ -50,20 +50,24 @@
              (.start)))
     p))
 
-(defn get-participants [client path]
-  (when-let [^LeaderSelector selector (-> @leader-selectors (get-in [client path]))]
+(defn get-participants
+  "Returns all participants node id."
+  [client path]
+  (when-let [^LeaderSelector selector (-> @selectors (get-in [client path]))]
     (map #(.getId %)
          (seq (-> selector
                   (.getParticipants))))))
 
 (defn get-leader
-  "Returns the leader's id"
+  "Returns the leader node id"
   [client path]
-  (when-let [^LeaderSelector selector (-> @leader-selectors (get-in [client path]))]
+  (when-let [^LeaderSelector selector (-> @selectors (get-in [client path]))]
     (-> selector
         (.getLeader)
         (.getId))))
 
-(defn stop []
-  (doseq [s (mapcat vals (vals @leader-selectors))]
+(defn stop
+  "Stop all elections."
+  []
+  (doseq [s (mapcat vals (vals @selectors))]
     (.close s)))

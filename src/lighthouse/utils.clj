@@ -7,6 +7,11 @@
   []
   (.getHostName (java.net.InetAddress/getLocalHost)))
 
+(defn normalize-path [^String path]
+  (if (.endsWith path "/")
+    (.substring path 1)
+    path))
+
 (defprotocol Resettable
   (reset-promise [this] "Reset the promise and return itself."))
 

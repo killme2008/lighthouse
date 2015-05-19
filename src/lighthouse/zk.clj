@@ -1,6 +1,7 @@
 (ns lighthouse.zk
   (:import [org.apache.curator.framework CuratorFramework CuratorFrameworkFactory CuratorFrameworkFactory$Builder]
-           [org.apache.curator.retry ExponentialBackoffRetry]))
+           [org.apache.curator.retry ExponentialBackoffRetry]
+           [org.apache.curator.utils EnsurePath]))
 
 (defn ^CuratorFramework mk-client
   "Create a started curator framework client."
@@ -23,3 +24,15 @@
     (let [fk (.build builder)]
       (.start fk)
       fk)))
+
+(defn ensure-path
+  "Ensure a path is created in zookeeper."
+  [client path]
+  (->
+   (EnsurePath. path)
+   (.ensure (.getZookeeperClient client))))
+
+(defn close-client
+  "Closes curator client."
+  [client]
+  (.close client))
