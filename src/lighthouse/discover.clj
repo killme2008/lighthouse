@@ -29,13 +29,16 @@
   (let [{:keys [path id data]} (resolve-opts opts)
         node-path (format "%s/%s" path service)]
     (zk/ensure-path cli node-path)
-    (->
-     cli
-     (PersistentEphemeralNode.
-      PersistentEphemeralNode$Mode/EPHEMERAL_SEQUENTIAL
-      (format "%s/%s/%s" path service id)
-      (.getBytes data))
-     (.start))))
+    (doto
+        (PersistentEphemeralNode. cli
+                                  PersistentEphemeralNode$Mode/EPHEMERAL_SEQUENTIAL
+                                  (format "%s/%s/%s" path service id)
+                                  (.getBytes data))
+      (.start))))
+
+(defn unregister [^PersistentEphemeralNode pn]
+  (when pn
+    (.close pn)))
 
 (defn get-current-nodes [pc service & opts]
   (let [{:keys [path]} (resolve-opts opts)
@@ -59,7 +62,6 @@
   (let [{:keys [path id]} (resolve-opts opts)
         node-path (format "%s/%s" path service)
         pc (PathChildrenCache.  cli node-path true)]
-    (println path service)
     (zk/ensure-path cli node-path)
     (..
      pc
@@ -76,6 +78,11 @@
     (.start pc)
     pc))
 
+(defn stop-watch
+  "Stop the PathChildrenCache."
+  [pc]
+  (.close pc))
+
 (defn create-service-balancer
   "Create a service balance function, you can call it
    with some key,and it wil return a alive node."
@@ -87,14 +94,21 @@
 
         bc (b/create-balancer balancer-type)]
     (compare-and-set! nodes [] (apply get-current-nodes pc service opts))
-    (with-meta
-      (fn [k]
-        (b/get-node bc @nodes k))
-      {:pc pc
-       :nodes nodes
-       :bc bc})))
+    (letfn [(ret ([k]
+                    (ret k nil))
+              ([k default]
+                 (or (b/get-node bc @nodes k) default)))]
+      (with-meta
+        ret
+        (merge (meta ret)
+               {:pc pc
+                :doc (format "A %s balancer for service %s" (name balancer-type) service)
+                :nodes nodes
+                :bc bc})))))
 
-(defn stop-watch
-  "Stop the PathChildrenCache."
-  [pc]
-  (.close pc))
+(defn stop-service-balancer
+  "Stop a service balancer created by create-service-balancer"
+  [b]
+  (when-let [pc (-> b meta :pc)]
+    (stop-watch pc)
+    (reset! (-> b meta :nodes) [])))

@@ -76,5 +76,5 @@
 (defn stop
   "Stop all elections."
   []
-  (doseq [s (mapcat vals (vals @selectors))]
+  (doseq [s (mapcat vals (mapcat vals (vals @selectors)))]
     (.close s)))

@@ -13,9 +13,11 @@
 
 (defn stop-zk []
   (when-let [c @test-client]
-    (.close c))
+    (.close c)
+    (reset! test-client nil))
   (when-let [s @test-server]
-    (.stop s)))
+    (.stop s)
+    (reset! test-server nil)))
 
 (defn zk-fixture [f]
   (start-zk)

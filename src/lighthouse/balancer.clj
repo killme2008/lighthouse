@@ -8,17 +8,20 @@
 (defrecord RoundRobinBalancer [^AtomicLong c]
   Balancer
   (get-node [_ nodes _]
-    (get nodes (mod (.incrementAndGet c) (count nodes)))))
+    (when (seq nodes)
+      (get nodes (mod (.incrementAndGet c) (count nodes))))))
 
 (defrecord RandomBalancer [^Random rand]
   Balancer
   (get-node [_ nodes _]
-    (get nodes (.nextInt rand (count nodes)))))
+    (when (seq nodes)
+      (get nodes (.nextInt rand (count nodes))))))
 
 (defrecord HashBalancer [hash-fn]
   Balancer
   (get-node [_ nodes k]
-    (get nodes (mod (hash-fn k) (count nodes)))))
+    (when (seq nodes)
+      (get nodes (mod (hash-fn k) (count nodes))))))
 
 (defn create-balancer [type]
   (case type
