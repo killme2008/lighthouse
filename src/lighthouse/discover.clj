@@ -85,7 +85,7 @@
 
 (defn create-service-balancer
   "Create a service balance function, you can call it
-   with some key,and it wil return a alive node."
+   with some key,and it wil return an alive node."
   [cli service & opts]
   (let [{:keys [balancer-type] :or {balancer-type :round-robin}} (apply hash-map opts)
         nodes (atom [])
@@ -94,7 +94,9 @@
 
         bc (b/create-balancer balancer-type)]
     (compare-and-set! nodes [] (apply get-current-nodes pc service opts))
-    (letfn [(ret ([k]
+    (letfn [(ret
+              ([] (ret "key"))
+              ([k]
                     (ret k nil))
               ([k default]
                  (or (b/get-node bc @nodes k) default)))]
