@@ -13,7 +13,7 @@ Add dependency in your project:
 Create a [curator](http://curator.apache.org/) framework client:
 
 ```clj
-(require '[lighthouse.discover.zk :as zk])
+(require '[lighthouse.zk :as zk])
 (def cli (zk/mk-client "localhost:2181"))
 ```
 
@@ -100,7 +100,7 @@ Each node pass it's id,if not present, the default id is the node's matchine hos
 When the node got the leadership, the `on-aquired` would be called with curator client,path and itself id.
 And when the node released the leadership, the `on-released` would be called with curator client,path and itself id.
 
-The `start-election` returns a resettable promise, you can deliver it a true value to stop the election, or a false value to 
+The `start-election` returns a resettable promise, you can deliver it a true value to stop the election, or a false value to
 release the leadership but still be in queue for next election:
 
 ```clj
