@@ -70,7 +70,8 @@
       (proxy [PathChildrenCacheListener] []
         (childEvent [cli e]
           (when (#{PathChildrenCacheEvent$Type/CHILD_REMOVED
-                   PathChildrenCacheEvent$Type/CHILD_ADDED}
+                   PathChildrenCacheEvent$Type/CHILD_ADDED
+                   PathChildrenCacheEvent$Type/CHILD_UPDATED}
                  (.getType e))
             (when on-updated
               (on-updated
