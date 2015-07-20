@@ -1,4 +1,4 @@
-(defproject lighthouse "0.1.0-RC1"
+(defproject lighthouse "0.1.0-RC2"
   :description "A Clojure library designed to leader election and node register/discover/balance in a service cluster by zookeeper."
   :url "https://github.com/killme2008/lighthouse"
   :license {:name "Eclipse Public License"
