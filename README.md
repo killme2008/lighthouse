@@ -7,7 +7,7 @@ A Clojure library designed to leader election and node register/discover/balance
 Add dependency in your project:
 
 ```clj
-[lighthouse "0.1.0-RC1"]
+[lighthouse "0.1.0"]
 ```
 
 Create a [curator](http://curator.apache.org/) framework client:
